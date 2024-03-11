@@ -6,7 +6,13 @@ import (
 )
 
 type ScoreBoard struct {
-	matches []*models.Match
+	matches map[string]*models.Match
+}
+
+func NewScoreBoard() *ScoreBoard {
+	return &ScoreBoard{
+		matches: make(map[string]*models.Match),
+	}
 }
 
 func (sb *ScoreBoard) StartGame(homeTeam, awayTeam string) {
@@ -16,40 +22,41 @@ func (sb *ScoreBoard) StartGame(homeTeam, awayTeam string) {
 		HomeScore: 0,
 		AwayScore: 0,
 	}
-	sb.matches = append(sb.matches, match)
-}
-
-func (sb *ScoreBoard) FinishGame(homeTeam, awayTeam string) {
-	var index int
-	for i, match := range sb.matches {
-		if match.HomeTeam == homeTeam && match.AwayTeam == awayTeam {
-			index = i
-			break
-		}
-	}
-	sb.matches = append(sb.matches[:index], sb.matches[index+1:]...)
+	key := homeTeam + "-" + awayTeam // key: homeTeam-awayTeam
+	sb.matches[key] = match
 }
 
 func (sb *ScoreBoard) UpdateScore(homeTeam, awayTeam string, homeScore, awayScore int) {
-	for _, match := range sb.matches {
-		if match.HomeTeam == homeTeam && match.AwayTeam == awayTeam {
-			match.HomeScore = homeScore
-			match.AwayScore = awayScore
-			break
-		}
+	key := homeTeam + "-" + awayTeam
+	match, ok := sb.matches[key]
+	if ok {
+		match.HomeScore = homeScore
+		match.AwayScore = awayScore
 	}
 }
 
+func (sb *ScoreBoard) FinishGame(homeTeam, awayTeam string) {
+	key := homeTeam + "-" + awayTeam
+	delete(sb.matches, key)
+}
+
 func (sb *ScoreBoard) Summary() []*models.Match {
-	// Introsort
-	// Quicksort, Heapsort and Insertionsort
-	sort.SliceStable(sb.matches, func(i, j int) bool {
-		totalScore1 := sb.matches[i].HomeScore + sb.matches[i].AwayScore
-		totalScore2 := sb.matches[j].HomeScore + sb.matches[j].AwayScore
-		if totalScore1 == totalScore2 {
-			return i > j
-		}
+	// Tworzymy pustą listę par klucz-wartość
+	var sortedMatches []*models.Match
+
+	// Przekształcamy mapę w listę
+	for _, match := range sb.matches {
+		sortedMatches = append(sortedMatches, match)
+	}
+
+	// Sortujemy listę meczów według sumy punktów
+	sort.SliceStable(sortedMatches, func(i, j int) bool {
+		totalScore1 := sortedMatches[i].HomeScore + sortedMatches[i].AwayScore
+		totalScore2 := sortedMatches[j].HomeScore + sortedMatches[j].AwayScore
+
+		// sortujemy malejąco
 		return totalScore1 > totalScore2
 	})
-	return sb.matches
+
+	return sortedMatches
 }

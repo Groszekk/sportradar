@@ -1,79 +1,94 @@
 package score_board
 
 import (
+	"fmt"
+	"reflect"
 	"sportradar/models"
 	"testing"
 )
 
 func TestStartGame(t *testing.T) {
-	sb := ScoreBoard{}
-	sb.StartGame("TeamA", "TeamB")
+	sb := NewScoreBoard()
+	homeTeam := "TeamA"
+	awayTeam := "TeamB"
+	key := fmt.Sprintf("%s-%s", homeTeam, awayTeam)
 
-	summary := sb.Summary()
-	if len(summary) != 1 {
-		t.Errorf("Summary should contain one match after starting a game, got: %d", len(summary))
+	sb.StartGame(homeTeam, awayTeam)
+
+	match, ok := sb.matches[key]
+	if !ok {
+		t.Errorf("Match should have key: %s", key)
 	}
-}
 
-func TestFinishGame(t *testing.T) {
-	sb := ScoreBoard{}
-	sb.StartGame("TeamA", "TeamB")
-	sb.FinishGame("TeamA", "TeamB")
+	if match.HomeScore > 0 || match.AwayScore > 0 {
+		t.Error("Match should start with zero scores")
+	}
 
-	summary := sb.Summary()
-	if len(summary) != 0 {
-		t.Errorf("Summary should be empty after finishing the game, got: %d", len(summary))
+	if len(sb.matches) != 1 {
+		t.Errorf("Summary should contain one match after starting a game, got: %d", len(sb.matches))
 	}
 }
 
 func TestUpdateScore(t *testing.T) {
-	sb := ScoreBoard{}
-	sb.StartGame("TeamA", "TeamB")
-	sb.UpdateScore("TeamA", "TeamB", 2, 1)
+	sb := NewScoreBoard()
+	homeTeam := "TeamA"
+	awayTeam := "TeamB"
+	homeScore := 1
+	awayScore := 2
+	key := fmt.Sprintf("%s-%s", homeTeam, awayTeam)
 
-	summary := sb.Summary()
-	if summary[0].HomeScore != 2 {
-		t.Errorf("Home team score should be updated, got: %d", summary[0].HomeScore)
+	sb.StartGame(homeTeam, awayTeam)
+	sb.UpdateScore(homeTeam, awayTeam, homeScore, awayScore)
+
+	if sb.matches[key].HomeScore != homeScore {
+		t.Errorf("Home team score should be updated, got: %d", sb.matches[key].HomeScore)
 	}
-	if summary[0].AwayScore != 1 {
-		t.Errorf("Away team score should be updated, got: %d", summary[0].AwayScore)
+
+	if sb.matches[key].AwayScore != awayScore {
+		t.Errorf("Away team score should be updated, got: %d", sb.matches[key].AwayScore)
+	}
+}
+
+func TestFinishGame(t *testing.T) {
+	sb := NewScoreBoard()
+	homeTeam := "TeamA"
+	awayTeam := "TeamB"
+
+	sb.FinishGame(homeTeam, awayTeam)
+	if len(sb.matches) != 0 {
+		t.Errorf("Summary should be empty after finishing the game, got: %d", len(sb.matches))
 	}
 }
 
 func TestSummary(t *testing.T) {
-	scoreBoard := ScoreBoard{}
+	sb := NewScoreBoard()
 
-	scoreBoard.StartGame("Mexico", "Canada")
-	scoreBoard.UpdateScore("Mexico", "Canada", 0, 5)
+	homeTeam1 := "TeamA"
+	awayTeam1 := "TeamB"
 
-	scoreBoard.StartGame("Spain", "Brazil")
-	scoreBoard.UpdateScore("Spain", "Brazil", 10, 2)
+	homeTeam2 := "TeamC"
+	awayTeam2 := "TeamD"
 
-	scoreBoard.StartGame("Germany", "France")
-	scoreBoard.UpdateScore("Germany", "France", 2, 2)
+	homeTeam3 := "TeamE"
+	awayTeam3 := "TeamF"
 
-	scoreBoard.StartGame("Uruguay", "Italy")
-	scoreBoard.UpdateScore("Uruguay", "Italy", 6, 6)
+	sb.StartGame(homeTeam1, awayTeam1)
+	sb.StartGame(homeTeam2, awayTeam2)
+	sb.StartGame(homeTeam3, awayTeam3)
 
-	scoreBoard.StartGame("Argentina", "Australia")
-	scoreBoard.UpdateScore("Argentina", "Australia", 3, 1)
+	sb.UpdateScore(homeTeam1, awayTeam1, 2, 2)
+	sb.UpdateScore(homeTeam2, awayTeam2, 3, 0)
+	sb.UpdateScore(homeTeam3, awayTeam3, 1, 5)
 
 	expectedSummary := []*models.Match{
-		{HomeTeam: "Uruguay", AwayTeam: "Italy", HomeScore: 6, AwayScore: 6},
-		{HomeTeam: "Spain", AwayTeam: "Brazil", HomeScore: 10, AwayScore: 2},
-		{HomeTeam: "Mexico", AwayTeam: "Canada", HomeScore: 0, AwayScore: 5},
-		{HomeTeam: "Argentina", AwayTeam: "Australia", HomeScore: 3, AwayScore: 1},
-		{HomeTeam: "Germany", AwayTeam: "France", HomeScore: 2, AwayScore: 2},
+		{HomeTeam: homeTeam3, AwayTeam: awayTeam3, HomeScore: 1, AwayScore: 5},
+		{HomeTeam: homeTeam1, AwayTeam: awayTeam1, HomeScore: 2, AwayScore: 2},
+		{HomeTeam: homeTeam2, AwayTeam: awayTeam2, HomeScore: 3, AwayScore: 0},
 	}
 
-	summary := scoreBoard.Summary()
+	summary := sb.Summary()
 
-	for i := range expectedSummary {
-		if summary[i].HomeTeam != expectedSummary[i].HomeTeam ||
-			summary[i].AwayTeam != expectedSummary[i].AwayTeam ||
-			summary[i].HomeScore != expectedSummary[i].HomeScore ||
-			summary[i].AwayScore != expectedSummary[i].AwayScore {
-			t.Errorf("Expected summary does not match at index %d", i)
-		}
+	if !reflect.DeepEqual(summary, expectedSummary) {
+		t.Error("Summary did not return the expected result")
 	}
 }
