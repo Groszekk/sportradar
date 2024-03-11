@@ -30,6 +30,16 @@ func (sb *ScoreBoard) FinishGame(homeTeam, awayTeam string) {
 	sb.matches = append(sb.matches[:index], sb.matches[index+1:]...)
 }
 
+func (sb *ScoreBoard) UpdateScore(homeTeam, awayTeam string, homeScore, awayScore int) {
+	for _, match := range sb.matches {
+		if match.HomeTeam == homeTeam && match.AwayTeam == awayTeam {
+			match.HomeScore = homeScore
+			match.AwayScore = awayScore
+			break
+		}
+	}
+}
+
 func (sb *ScoreBoard) Summary() []*models.Match {
 	// Introsort
 	// Quicksort, Heapsort and Insertionsort
