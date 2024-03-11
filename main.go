@@ -1,10 +1,13 @@
 package main
 
-import "sportradar/score_board"
+import (
+	"fmt"
+	"sportradar/score_board"
+)
 
 func main() {
 	// example output
-	sb := &score_board.ScoreBoard{}
+	sb := score_board.NewScoreBoard()
 
 	sb.StartGame("Mexico", "Canada")
 	sb.UpdateScore("Mexico", "Canada", 0, 5)
@@ -22,6 +25,7 @@ func main() {
 	sb.UpdateScore("Argentina", "Australia", 3, 1)
 
 	summary := sb.Summary()
+	fmt.Println(summary)
 
 	println("------------------------------------")
 	for _, v := range summary {
